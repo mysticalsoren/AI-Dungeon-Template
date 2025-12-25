@@ -1,0 +1,9 @@
+{
+    "workbench.editor.customLabels.patterns": {
+        "**/*.js": "${dirname(1)} - ${filename}.js"
+    },
+    "files.exclude": {
+        "out/jsconfig.json": true
+    },
+    "chat.disableAIFeatures": true
+}

@@ -1,0 +1,38 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Python: Build",
+            "command": "python scripts/build.py",
+            "type": "shell",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Python: Toggle noLib",
+            "command": "python scripts/toggleNoLib.py",
+            "type": "shell"
+        },
+        {
+            "label": "Git: Add Submodule",
+            "type": "shell",
+            "command": "git submodule add ${input:gitURL} ${input:submodulePath}"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "gitURL",
+            "type": "promptString",
+            "description": "The Git URI / URL"
+        },
+        {
+            "id": "submodulePath",
+            "type": "promptString",
+            "description": "The path on your drive to insert the submodule",
+            "default": "lib/submodule"
+        }
+    ]
+}
