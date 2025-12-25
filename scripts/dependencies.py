@@ -42,7 +42,7 @@ if __name__ == "__main__":
         if not os.path.isdir(lib_path):
             subprocess.run(f"git clone {d_git} {os.path.join(os.curdir,lib_path)}")
         
-        if not isinstance(d_hash, str) or len(d_hash) < 1 or ARGS.update:
+        if not isinstance(d_hash, str) or len(d_hash) < 40 or ARGS.update:
             os.chdir(lib_path)
             subprocess.run("git pull")
             dependency["hash"] = subprocess.run("git rev-parse HEAD",capture_output=True,text=True).stdout.replace("\n","")
