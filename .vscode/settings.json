@@ -5,5 +5,13 @@
     "files.exclude": {
         "out/jsconfig.json": true
     },
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "**/dependencies.json"
+            ],
+            "url": ".vscode/schema/dependencies.schema.json"
+        }
+    ],
     "chat.disableAIFeatures": true
 }

@@ -20,6 +20,16 @@
             "label": "Git: Add Submodule",
             "type": "shell",
             "command": "git submodule add ${input:gitURL} ${input:submodulePath}"
+        },
+        {
+            "label": "Python: Download Dependencies",
+            "type": "shell",
+            "command": "python scripts/dependencies.py"
+        },
+        {
+            "label": "Python: Update all Dependencies",
+            "type": "shell",
+            "command": "python scripts/dependencies.py -u"
         }
     ],
     "inputs": [
