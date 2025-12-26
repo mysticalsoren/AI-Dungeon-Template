@@ -46,7 +46,6 @@ def parse_library(library_path: str, library_title: str, root_directory: str, li
                 while (line := f.readline()) != "":
                     result += f"\t{line}"
             result += f"\n\t{"="*8} LICENSE {"="*8}\t*/\n"
-        result += f"\n/*\t{"="*8} LICENSE {"="*8}\n"
         
         result += f"\n/*\t{"="*8} CONTRIBUTORS {"="*8}\n"
         os.chdir(root_directory)
