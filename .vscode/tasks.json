@@ -30,6 +30,15 @@
             "label": "Python: Update all Dependencies",
             "type": "shell",
             "command": "python scripts/dependencies.py -u"
+        },
+        {
+            "label": "Python: Update dependencies & Build",
+            "dependsOn": [
+                "Python: Update all Dependencies",
+                "Python: Build"
+            ],
+            "type": "shell",
+            "command": "echo \"Updated and Built!\""
         }
     ],
     "inputs": [
