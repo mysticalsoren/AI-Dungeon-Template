@@ -17,11 +17,6 @@
             "type": "shell"
         },
         {
-            "label": "Git: Add Submodule",
-            "type": "shell",
-            "command": "git submodule add ${input:gitURL} ${input:submodulePath}"
-        },
-        {
             "label": "Python: Download Dependencies",
             "type": "shell",
             "command": "python scripts/dependencies.py"
@@ -39,19 +34,6 @@
             ],
             "type": "shell",
             "command": "echo \"Updated and Built!\""
-        }
-    ],
-    "inputs": [
-        {
-            "id": "gitURL",
-            "type": "promptString",
-            "description": "The Git URI / URL"
-        },
-        {
-            "id": "submodulePath",
-            "type": "promptString",
-            "description": "The path on your drive to insert the submodule",
-            "default": "lib/submodule"
         }
     ]
 }
