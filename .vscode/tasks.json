@@ -33,6 +33,7 @@
                 "Python: Build"
             ],
             "type": "shell",
+            "dependsOrder": "sequence",
             "command": "echo \"Updated and Built!\""
         }
     ]
