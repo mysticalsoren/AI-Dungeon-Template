@@ -130,8 +130,6 @@ class Bundler():
         return result
     
 if __name__ == "__main__":
-    PROJECT_NAME = ""
-    PROJECT_NAME = len(PROJECT_NAME) > 0 and PROJECT_NAME or os.getcwd()[os.getcwd().rindex(os.sep) +1:] + " library.js"
     OUT_DIR = os.path.join("out")
     LIB_DIR = os.path.join("lib")
     
@@ -161,7 +159,6 @@ if __name__ == "__main__":
         for entry in os.scandir(LIB_DIR):
             content = Bundler.parse_library(entry.path)
             if isinstance(content, str) and len(content) > 0 and len(bundled_library_content) > 0:
-                print(entry.path)
                 bundled_library_content += "\n" * 2
             bundled_library_content += content
     with open(os.path.join(OUT_DIR,Bundler.LIBRARY_FILENAME),"x",encoding="utf8") as f:
