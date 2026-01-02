@@ -3,83 +3,137 @@ import shutil
 import json
 import subprocess
 
-def findSrc(directory: os.DirEntry) -> None | os.DirEntry:
-    """
-    Retrieves any src folder regardless of depth.
-    ```python
-    - library-A/
-        - examples/
-            - src/ # (It will grab this instead)
-                - ...
-        - src/ # (when it should be this.)
-            library.js
-    ```
+# region findSrc
+# def findSrc(directory: os.DirEntry) -> None | os.DirEntry:
+#     """
+#     Retrieves any src folder regardless of depth.
+#     ```python
+#     - library-A/
+#         - examples/
+#             - src/ # (It will grab this instead)
+#                 - ...
+#         - src/ # (when it should be this.)
+#             library.js
+#     ```
     
-    For right now, I'll leave it alone.
-    """
-    if directory.is_file():
-        return None
-    for entry in os.scandir(directory.path):
-        if entry.is_file() or entry.name.startswith("."):
-            continue
-        if entry.name != "src":
-            result = findSrc(entry)
-            if result and result.name == "src":
-                return result
-        else:
-            return entry
-    return None
+#     For right now, I'll leave it alone.
+#     """
+#     if directory.is_file():
+#         return None
+#     for entry in os.scandir(directory.path):
+#         if entry.is_file() or entry.name.startswith("."):
+#             continue
+#         if entry.name != "src":
+#             result = findSrc(entry)
+#             if result and result.name == "src":
+#                 return result
+#         else:
+#             return entry
+#     return None
+# endregion
 
-def parse_library(library_path: str, library_title: str, root_directory: str, license_path: str = None, contributors_path: str = None):
-
+def file_has_contents(path: str) -> bool:
+    if not os.path.isfile(path):
+        return False
     try:
-        cwd = os.getcwd()
-        result = f"// #region {library_title}"
-        if license_path is None:
-            license_path = os.path.join(root_directory, "LICENSE")
-        if contributors_path is None:
-            contributors_path = os.path.join(root_directory, "CONTRIBUTORS")
-        
-        if os.path.isfile(license_path):
-            result += f"\n/*\t{"="*8} LICENSE {"="*8}\n"
-            with open(license_path,encoding="utf8") as f:
-                while (line := f.readline()) != "":
-                    result += f"\t{line}"
-            result += f"\n\t{"="*8} LICENSE {"="*8}\t*/\n"
-        
-        result += f"\n/*\t{"="*8} CONTRIBUTORS {"="*8}\n"
-        os.chdir(root_directory)
-        contributors = subprocess.run("git shortlog -s",capture_output=True,text=True).stdout.replace(" ","").split("\t")
-        for contributor in contributors[1:]:
-            if (newline := contributor.rfind('\n')) > -1:
-                contributor = contributor[:newline]
-            result += f'\t{contributor} - code contributor\n'
-        result = result[:len(result)-1]
-        os.chdir(cwd)
-        if os.path.isfile(contributors_path):
-            with open(contributors_path, encoding="utf8") as f:
-                while (line := f.readline()) != "":
-                    result += f"\t{line}"
-        result += f"\n\t{"="*8} CONTRIBUTORS {"="*8}\t*/\n"
-        
-        with open(library_path,encoding="utf8") as f:
-            while (line := f.readline()) != "":
-                result += f"{line}"
-        result += "\n" * 2
-        result += "// #endregion"
-        result += "\n" * 2
+        with open(path, encoding="utf8") as f:
+            return len(f.readline()) > 1
     except Exception as e:
-        raise OSError(f"[BUILD] Error: Unable to read {library_path}")
-    return result
+        return False
+
+def run_git(git_repository: str, git_args: str) -> subprocess.CompletedProcess:
+    CWD = os.getcwd()
+    os.chdir(git_repository)
+    process = subprocess.run(f'git {git_args}',stdout=subprocess.PIPE,text=True,timeout=5)
+    os.chdir(CWD)
+    return process
+
+class Bundler():
+    """AI Dungeon Bundler
+    """
+    SRC_FOLDER = os.path.join("src") # relative to root or project directory.
+    LIBRARY_FILENAME = "library.js"
+    LICENSE_FILENAME = "LICENSE"
+    CONTRIBUTORS_FILENAME = "CONTRIBUTORS"
+    @classmethod
+    def parse_library(cls, root_directory: str, library_path: str = None, library_title: str = None, license_path: str = None, contributors_path: str = None):
+        """Generates a javascript library with headers
+        
+        1. License Header (if present)
+        2. Contribution Header
+        3. Source Code
+
+        Args:
+            root_directory (str): The project/root/base directory of the repository
+            library_path (str, optional): the library.js file. Defaults to {root_directory}/{Bundler.SRC_FOLDER}/{Bundler.LIBRARY_FILENAME}
+            library_title (str, optional): The name of the library. Defaults to the root directory name
+            license_path (str, optional): License file. Defaults to {root_directory}/{Bundler.LICENSE_FILENAME}.
+            contributors_path (str, optional): Contributor file. Defaults to {root_directory}/{Bundler.CONTRIBUTORS_FILENAME}.
+            
+
+        Raises:
+            OSError: Something went wrong during parsing.
+
+        Returns:
+            str: the javascript library ready to be written
+        """
+        result = ""
+        if library_path is None:
+            library_path = os.path.join(root_directory,cls.SRC_FOLDER,cls.LIBRARY_FILENAME)
+        if library_title is None:
+            library_title = os.path.abspath(root_directory)
+            library_title = library_title[library_title.rindex(os.sep)+1:]
+        if license_path is None:
+            license_path = os.path.join(root_directory,cls.LICENSE_FILENAME)
+        if contributors_path is None:
+            contributors_path = os.path.join(root_directory,cls.CONTRIBUTORS_FILENAME)
+        if not os.path.isfile(library_path):
+            return result
+
+        try:
+            # Verify that the given library has contents.
+            if not file_has_contents(library_path):
+                print("[BUILD] WARNING: Library has no contents. Skipping...")
+                return result
+            
+            result += f"// #region {library_title}"
+
+            if file_has_contents(license_path):
+                result += f"\n/*\t{"="*8} LICENSE {"="*8}\n"
+                with open(license_path,encoding="utf8") as f:
+                    while (line := f.readline()) != "":
+                        result += f"\t{line}"
+                result += f"\n\t{"="*8} LICENSE {"="*8}\t*/\n"
+            
+            result += f"\n/*\t{"="*8} CONTRIBUTORS {"="*8}\n"
+            # Retrieve code contributors from git
+            contributors = run_git(root_directory, "shortlog -s").stdout.replace(" ","").split("\t")
+            for contributor in contributors[1:]:
+                if (newline := contributor.rfind('\n')) > -1:
+                    contributor = contributor[:newline]
+                result += f'\t{contributor} - code contributor\n'
+            result = result[:len(result)-1]
+
+            if file_has_contents(contributors_path):
+                with open(contributors_path, encoding="utf8") as f:
+                    while (line := f.readline()) != "":
+                        result += f"\t{line}"
+            result += f"\n\t{"="*8} CONTRIBUTORS {"="*8}\t*/\n\n"
+            
+            with open(library_path,encoding="utf8") as f:
+                while (line := f.readline()) != "":
+                    result += f"{line}"
+            result += "\n" * 1
+            result += "// #endregion"
+        except Exception as e:
+            raise OSError(f"[BUILD] Error: Unable to read {library_path}.\nPython: {e}")
+        return result
     
 if __name__ == "__main__":
     PROJECT_NAME = ""
     PROJECT_NAME = len(PROJECT_NAME) > 0 and PROJECT_NAME or os.getcwd()[os.getcwd().rindex(os.sep) +1:] + " library.js"
-    SRC_DIR = os.path.join("src")
     OUT_DIR = os.path.join("out")
     LIB_DIR = os.path.join("lib")
-    LIBRARY_FILENAME = "library.js"
-    LICENSE = os.path.join("LICENSE")
     
     OUT_JSCONFIG = {
         "compilerOptions": {
@@ -95,24 +149,21 @@ if __name__ == "__main__":
     except Exception as _:
         pass
     
-    for entry in os.scandir(SRC_DIR):
+    for entry in os.scandir(Bundler.SRC_FOLDER):
         if entry.is_dir():
             continue
-        if entry.name == LIBRARY_FILENAME:
+        if entry.name == Bundler.LIBRARY_FILENAME:
             continue
         shutil.copy(entry.path, os.path.join(OUT_DIR,entry.name))
 
-    bundled_library_content = parse_library(os.path.join(SRC_DIR,LIBRARY_FILENAME),PROJECT_NAME,os.curdir)
-
-    for entry in os.scandir(LIB_DIR):
-        lib_src = findSrc(entry)
-        lib_file = os.path.join(lib_src, LIBRARY_FILENAME)
-        lib_license = os.path.join(entry.path,LICENSE)
-
-        if not os.path.isfile(lib_file):
-            print(f"[BUILD] Warning: could not find \"{lib_file}\" for \"{entry.name}\"")
-            continue
-        bundled_library_content += parse_library(lib_file, entry.name, entry.path)
-    with open(os.path.join(OUT_DIR,LIBRARY_FILENAME),"x",encoding="utf8") as f:
+    bundled_library_content = Bundler.parse_library(os.curdir)
+    if os.path.isdir(LIB_DIR):
+        for entry in os.scandir(LIB_DIR):
+            content = Bundler.parse_library(entry.path)
+            if isinstance(content, str) and len(content) > 0 and len(bundled_library_content) > 0:
+                print(entry.path)
+                bundled_library_content += "\n" * 2
+            bundled_library_content += content
+    with open(os.path.join(OUT_DIR,Bundler.LIBRARY_FILENAME),"x",encoding="utf8") as f:
         f.write(bundled_library_content)
     print(f"[BUILD] Log: Built at {os.path.abspath(os.path.join(OUT_DIR))}")
