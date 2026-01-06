@@ -33,7 +33,7 @@ declare global {
         contextTokens?: number
     }
     const log = console.log
-    function addStoryCard(keys: string, entry: string, type: string): StoryCard
+    function addStoryCard(keys: string, entry: string, type: string): number
     function removeStoryCard(index: number): void
     function updateStoryCard(index: number, keys?: string, entry?: string, type?: string): void
 }
